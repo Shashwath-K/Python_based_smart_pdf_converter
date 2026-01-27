@@ -7,7 +7,7 @@ PDF_TEMPLATES = {
         "title_size": 18,
         "body_size": 11,
         "line_spacing": 14,
-        "margin": 50
+        "margin": 60
     },
     PDFTemplate.MODERN: {
         "font": "Helvetica",
@@ -15,6 +15,6 @@ PDF_TEMPLATES = {
         "title_size": 20,
         "body_size": 12,
         "line_spacing": 16,
-        "margin": 40
+        "margin": 50
     }
 }
