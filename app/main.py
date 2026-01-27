@@ -37,7 +37,7 @@ def convert_file(file, template_choice):
             return tmp.name
 
     except (FileValidationError, ParsingError) as e:
-        return str(e)
+        raise gr.Error(str(e))
 
 
 def launch_app():
