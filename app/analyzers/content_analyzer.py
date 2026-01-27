@@ -1,16 +1,8 @@
 import re
-
+import os
 
 def has_heading(content: str) -> bool:
-    """
-    Detects whether the content already has a heading.
-    Heuristics:
-    - Markdown headings (#)
-    - Uppercase first-line titles
-    """
-
     lines = [line.strip() for line in content.splitlines() if line.strip()]
-
     if not lines:
         return False
 
@@ -25,14 +17,13 @@ def has_heading(content: str) -> bool:
     return False
 
 
-def normalize_content(content: str, filename: str) -> str:
-    """
-    Injects a heading if missing.
-    """
+def normalize_content(content: str, file_path: str) -> str:
     if has_heading(content):
         return content
 
-    title = filename.split("/")[-1].split(".")[0]
+    # Extract clean filename only
+    filename = os.path.basename(file_path)
+    title = os.path.splitext(filename)[0]
     title = title.replace("_", " ").replace("-", " ").title()
 
     return f"{title}\n\n{content}"
