@@ -16,5 +16,13 @@ PDF_TEMPLATES = {
         "body_size": 12,
         "line_spacing": 16,
         "margin": 50
+    },
+    PDFTemplate.MINIMAL: {
+        "font": "Courier",
+        "title_font": "Courier-Bold",
+        "title_size": 16,
+        "body_size": 10,
+        "line_spacing": 12,
+        "margin": 40
     }
 }
