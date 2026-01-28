@@ -6,6 +6,8 @@ class SupportedFileType(Enum):
     TXT = "txt"
     MD = "md"
     DOCX = "docx"
+    CSV = "csv"
+    HTML = "html"
 
     @classmethod
     def list_values(cls):

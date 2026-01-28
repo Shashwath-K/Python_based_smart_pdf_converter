@@ -4,6 +4,7 @@ from enum import Enum
 class PDFTemplate(Enum):
     CLASSIC = "classic"
     MODERN = "modern"
+    MINIMAL = "minimal"
 
     @classmethod
     def list_values(cls):
