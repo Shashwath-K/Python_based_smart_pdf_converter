@@ -10,6 +10,8 @@ Supported input formats include
 - txt
 - md
 - docx
+- csv
+- html
 
 > The system validates file type and size, analyzes content structure, applies a predefined PDF template, and outputs a downloadable PDF.
 
