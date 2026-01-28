@@ -6,9 +6,10 @@ from app.parsers.txt_parser import parse_txt
 from app.parsers.md_parser import parse_md
 from app.parsers.docx_parser import parse_docx
 from app.parsers.bin_parser import parse_bin
-from app.parsers.csv_parser import parse_csv
-from app.parsers.html_parser import parse_html
-from app.analyzers.content_analyzer import normalize_content
+
+from app.analyzers.markdown_analyzer import analyze_markdown
+from app.analyzers.plaintext_analyzer import analyze_plaintext
+
 from app.pdf.pdf_generator import generate_pdf
 from app.enums.templates import PDFTemplate
 from app.enums.file_types import SupportedFileType
@@ -25,18 +26,17 @@ def convert_file(file, template_choice):
             content = parse_md(file)
         elif file_type == SupportedFileType.DOCX:
             content = parse_docx(file)
-        elif file_type == SupportedFileType.CSV:
-            content = parse_csv(file)
-        elif file_type == SupportedFileType.HTML:
-            content = parse_html(file)
         else:
             content = parse_bin(file)
 
-        content = normalize_content(content, file.name)
+        if file_type == SupportedFileType.MD:
+            document = analyze_markdown(content, file.name)
+        else:
+            document = analyze_plaintext(content, file.name)
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
             generate_pdf(
-                content=content,
+                document=document,
                 template=PDFTemplate(template_choice),
                 output_path=tmp.name
             )
@@ -47,7 +47,7 @@ def convert_file(file, template_choice):
 
 
 def launch_app():
-    interface = gr.Interface(
+    gr.Interface(
         fn=convert_file,
         inputs=[
             gr.File(label="Upload File"),
@@ -57,11 +57,9 @@ def launch_app():
             )
         ],
         outputs=gr.File(label="Download PDF"),
-        title="File to Structured PDF Converter",
-        description="Converts TXT, MD, DOCX, BIN files into structured PDFs"
-    )
-
-    interface.launch()
+        title="Semantic File to PDF Converter",
+        description="Markdown-aware conversion with headings, lists, code blocks, and professional layout"
+    ).launch()
 
 
 if __name__ == "__main__":

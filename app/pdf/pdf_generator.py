@@ -1,23 +1,15 @@
-from reportlab.lib.pagesizes import A4
 from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer
+    SimpleDocTemplate, Paragraph, Spacer, Preformatted
 )
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
-from reportlab.lib.units import mm
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.colors import lightgrey
 from reportlab.pdfgen import canvas
 
 from app.templates.pdf_templates import PDF_TEMPLATES
 from app.enums.templates import PDFTemplate
-
-
-ALIGNMENT_MAP = {
-    "CENTER": TA_CENTER,
-    "JUSTIFY": TA_JUSTIFY,
-    "LEFT": TA_LEFT
-}
+from app.analyzers.document_model import StructuredDocument
 
 
 def draw_page_border(c: canvas.Canvas, doc, border_width=1):
@@ -33,7 +25,7 @@ def draw_page_border(c: canvas.Canvas, doc, border_width=1):
     )
 
 
-def generate_pdf(content: str, template: PDFTemplate, output_path: str):
+def generate_pdf(document: StructuredDocument, template: PDFTemplate, output_path: str):
     cfg = PDF_TEMPLATES[template]
 
     doc = SimpleDocTemplate(
@@ -47,46 +39,78 @@ def generate_pdf(content: str, template: PDFTemplate, output_path: str):
 
     story = []
 
-    lines = content.splitlines()
-    title_text = lines[0]
-    body_lines = lines[1:]
-
-    # -------- Title Style --------
-    title_cfg = cfg["title_style"]
+    # ---------- TITLE ----------
     title_style = ParagraphStyle(
-        name="TitleStyle",
-        fontName=title_cfg["font"],
-        fontSize=title_cfg["size"],
-        alignment=ALIGNMENT_MAP[title_cfg["alignment"]],
-        spaceAfter=title_cfg["space_after"]
+        name="Title",
+        fontName=cfg["title_style"]["font"],
+        fontSize=cfg["title_style"]["size"],
+        alignment=TA_CENTER,
+        spaceAfter=cfg["title_style"]["space_after"]
     )
 
-    story.append(Paragraph(title_text, title_style))
+    story.append(Paragraph(document.title, title_style))
 
-    # -------- Body Style --------
+    # ---------- STYLES ----------
     body_cfg = cfg["body_style"]
+
     body_style = ParagraphStyle(
-        name="BodyStyle",
+        name="Body",
         fontName=body_cfg["font"],
         fontSize=body_cfg["size"],
         leading=body_cfg["leading"],
-        alignment=ALIGNMENT_MAP[body_cfg["alignment"]],
-        spaceAfter=body_cfg["space_after"]
+        alignment=TA_JUSTIFY,
+        spaceBefore=6,
+        spaceAfter=10
     )
 
-    for line in body_lines:
-        if line.strip():
-            story.append(Paragraph(line, body_style))
-        else:
-            story.append(Spacer(1, body_cfg["leading"]))
+    h_styles = {
+        "h1": ParagraphStyle("H1", fontSize=16, spaceBefore=18, spaceAfter=14),
+        "h2": ParagraphStyle("H2", fontSize=14, spaceBefore=16, spaceAfter=12),
+        "h3": ParagraphStyle("H3", fontSize=12, spaceBefore=14, spaceAfter=10),
+    }
 
-    # -------- Page Border --------
-    def on_page(canvas, doc):
-        if cfg["page"].get("border"):
-            draw_page_border(
-                canvas,
-                doc,
-                cfg["page"].get("border_width", 1)
+    quote_style = ParagraphStyle(
+        name="Quote",
+        leftIndent=20,
+        italic=True,
+        textColor="grey",
+        spaceBefore=8,
+        spaceAfter=8
+    )
+
+    for block in document.blocks:
+        if block.type in h_styles:
+            story.append(Paragraph(block.content, h_styles[block.type]))
+
+        elif block.type == "paragraph":
+            story.append(Paragraph(block.content, body_style))
+
+        elif block.type == "bullet":
+            story.append(Paragraph(f"• {block.content}", body_style))
+
+        elif block.type == "quote":
+            story.append(Paragraph(block.content, quote_style))
+
+        elif block.type == "code":
+            story.append(
+                Preformatted(
+                    block.content,
+                    style=ParagraphStyle(
+                        name="Code",
+                        fontName="Courier",
+                        fontSize=9,
+                        leading=12,
+                        backColor=lightgrey,
+                        leftIndent=12,
+                        rightIndent=12,
+                        spaceBefore=12,
+                        spaceAfter=12
+                    )
+                )
             )
+
+    def on_page(c, d):
+        if cfg["page"].get("border"):
+            draw_page_border(c, d, cfg["page"].get("border_width", 1))
 
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
