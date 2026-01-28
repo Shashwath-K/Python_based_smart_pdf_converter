@@ -2,27 +2,64 @@ from app.enums.templates import PDFTemplate
 
 PDF_TEMPLATES = {
     PDFTemplate.CLASSIC: {
-        "font": "Times-Roman",
-        "title_font": "Times-Bold",
-        "title_size": 18,
-        "body_size": 11,
-        "line_spacing": 14,
-        "margin": 60
+        "title_style": {
+            "font": "Times-Bold",
+            "size": 18,
+            "alignment": "CENTER",
+            "space_after": 20
+        },
+        "body_style": {
+            "font": "Times-Roman",
+            "size": 11,
+            "leading": 16,
+            "alignment": "JUSTIFY",
+            "space_after": 12
+        },
+        "page": {
+            "margin": 60,
+            "border": True,
+            "border_width": 1
+        }
     },
+
     PDFTemplate.MODERN: {
-        "font": "Helvetica",
-        "title_font": "Helvetica-Bold",
-        "title_size": 20,
-        "body_size": 12,
-        "line_spacing": 16,
-        "margin": 50
+        "title_style": {
+            "font": "Helvetica-Bold",
+            "size": 20,
+            "alignment": "CENTER",
+            "space_after": 24
+        },
+        "body_style": {
+            "font": "Helvetica",
+            "size": 12,
+            "leading": 18,
+            "alignment": "JUSTIFY",
+            "space_after": 14
+        },
+        "page": {
+            "margin": 50,
+            "border": True,
+            "border_width": 1.5
+        }
     },
+
     PDFTemplate.MINIMAL: {
-        "font": "Courier",
-        "title_font": "Courier-Bold",
-        "title_size": 16,
-        "body_size": 10,
-        "line_spacing": 12,
-        "margin": 40
+        "title_style": {
+            "font": "Courier-Bold",
+            "size": 16,
+            "alignment": "LEFT",
+            "space_after": 16
+        },
+        "body_style": {
+            "font": "Courier",
+            "size": 10,
+            "leading": 14,
+            "alignment": "LEFT",
+            "space_after": 10
+        },
+        "page": {
+            "margin": 40,
+            "border": False
+        }
     }
 }
