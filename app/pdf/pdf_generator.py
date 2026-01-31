@@ -1,10 +1,16 @@
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Preformatted
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Preformatted,
+    Table,
+    TableStyle
 )
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.colors import lightgrey
+from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 
 from app.templates.pdf_templates import PDF_TEMPLATES
@@ -12,7 +18,10 @@ from app.enums.templates import PDFTemplate
 from app.analyzers.document_model import StructuredDocument
 
 
-def draw_page_border(c: canvas.Canvas, doc, border_width=1):
+# -------------------------------------------------
+# Page Border Utility
+# -------------------------------------------------
+def draw_page_border(c: canvas.Canvas, doc, border_width: int = 1):
     width, height = A4
     margin = doc.leftMargin
 
@@ -25,7 +34,14 @@ def draw_page_border(c: canvas.Canvas, doc, border_width=1):
     )
 
 
-def generate_pdf(document: StructuredDocument, template: PDFTemplate, output_path: str):
+# -------------------------------------------------
+# PDF Generator
+# -------------------------------------------------
+def generate_pdf(
+    document: StructuredDocument,
+    template: PDFTemplate,
+    output_path: str
+):
     cfg = PDF_TEMPLATES[template]
 
     doc = SimpleDocTemplate(
@@ -39,7 +55,9 @@ def generate_pdf(document: StructuredDocument, template: PDFTemplate, output_pat
 
     story = []
 
-    # ---------- TITLE ----------
+    # -------------------------------------------------
+    # Title
+    # -------------------------------------------------
     title_style = ParagraphStyle(
         name="Title",
         fontName=cfg["title_style"]["font"],
@@ -50,7 +68,9 @@ def generate_pdf(document: StructuredDocument, template: PDFTemplate, output_pat
 
     story.append(Paragraph(document.title, title_style))
 
-    # ---------- STYLES ----------
+    # -------------------------------------------------
+    # Base Body Style
+    # -------------------------------------------------
     body_cfg = cfg["body_style"]
 
     body_style = ParagraphStyle(
@@ -63,22 +83,40 @@ def generate_pdf(document: StructuredDocument, template: PDFTemplate, output_pat
         spaceAfter=10
     )
 
+    # -------------------------------------------------
+    # Heading Styles
+    # -------------------------------------------------
     h_styles = {
-        "h1": ParagraphStyle("H1", fontSize=16, spaceBefore=18, spaceAfter=14),
-        "h2": ParagraphStyle("H2", fontSize=14, spaceBefore=16, spaceAfter=12),
-        "h3": ParagraphStyle("H3", fontSize=12, spaceBefore=14, spaceAfter=10),
+        "h1": ParagraphStyle(
+            "H1", fontSize=16, spaceBefore=18, spaceAfter=14
+        ),
+        "h2": ParagraphStyle(
+            "H2", fontSize=14, spaceBefore=16, spaceAfter=12
+        ),
+        "h3": ParagraphStyle(
+            "H3", fontSize=12, spaceBefore=14, spaceAfter=10
+        ),
     }
 
-    quote_style = ParagraphStyle(
-        name="Quote",
-        leftIndent=20,
-        italic=True,
-        textColor="grey",
-        spaceBefore=8,
-        spaceAfter=8
+    # -------------------------------------------------
+    # Bullet Style (Indented / Hanging)
+    # -------------------------------------------------
+    bullet_style = ParagraphStyle(
+        name="Bullet",
+        fontName=body_cfg["font"],
+        fontSize=body_cfg["size"],
+        leading=body_cfg["leading"],
+        leftIndent=24,
+        bulletIndent=12,
+        spaceBefore=4,
+        spaceAfter=6
     )
 
+    # -------------------------------------------------
+    # Document Blocks Rendering
+    # -------------------------------------------------
     for block in document.blocks:
+
         if block.type in h_styles:
             story.append(Paragraph(block.content, h_styles[block.type]))
 
@@ -86,10 +124,46 @@ def generate_pdf(document: StructuredDocument, template: PDFTemplate, output_pat
             story.append(Paragraph(block.content, body_style))
 
         elif block.type == "bullet":
-            story.append(Paragraph(f"• {block.content}", body_style))
+            story.append(
+                Paragraph(
+                    block.content,
+                    bullet_style,
+                    bulletText="•"
+                )
+            )
 
         elif block.type == "quote":
-            story.append(Paragraph(block.content, quote_style))
+            quote_para = Paragraph(
+                block.content,
+                ParagraphStyle(
+                    name="QuoteText",
+                    fontName=body_cfg["font"],
+                    fontSize=body_cfg["size"],
+                    leading=body_cfg["leading"],
+                    italic=True,
+                    textColor=colors.darkgrey
+                )
+            )
+
+            quote_table = Table(
+                [[quote_para]],
+                colWidths=[doc.width - 40]
+            )
+
+            quote_table.setStyle(
+                TableStyle([
+                    ("BOX", (0, 0), (-1, -1), 1, colors.grey),
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.whitesmoke),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 12),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+                    ("TOPPADDING", (0, 0), (-1, -1), 10),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+                ])
+            )
+
+            story.append(Spacer(1, 10))
+            story.append(quote_table)
+            story.append(Spacer(1, 14))
 
         elif block.type == "code":
             story.append(
@@ -109,8 +183,19 @@ def generate_pdf(document: StructuredDocument, template: PDFTemplate, output_pat
                 )
             )
 
+    # -------------------------------------------------
+    # Page Decoration Hook
+    # -------------------------------------------------
     def on_page(c, d):
         if cfg["page"].get("border"):
-            draw_page_border(c, d, cfg["page"].get("border_width", 1))
+            draw_page_border(
+                c,
+                d,
+                cfg["page"].get("border_width", 1)
+            )
 
-    doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
+    doc.build(
+        story,
+        onFirstPage=on_page,
+        onLaterPages=on_page
+    )
