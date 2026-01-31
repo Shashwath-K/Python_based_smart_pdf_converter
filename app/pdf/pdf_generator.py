@@ -80,7 +80,7 @@ def generate_pdf(
         leading=body_cfg["leading"],
         alignment=TA_JUSTIFY,
         spaceBefore=6,
-        spaceAfter=10
+        spaceAfter=14  # Increased from 10
     )
 
     # -------------------------------------------------
@@ -109,7 +109,7 @@ def generate_pdf(
         leftIndent=24,
         bulletIndent=12,
         spaceBefore=4,
-        spaceAfter=6
+        spaceAfter=10  # Increased from 6
     )
 
     # -------------------------------------------------
