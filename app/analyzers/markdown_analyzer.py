@@ -35,33 +35,27 @@ def analyze_markdown(content: str, file_path: str) -> StructuredDocument:
             code_buffer.append(line)
             continue
 
-        # ---------- PROJECT TREE / STRUCTURE ----------
-        if re.match(r"^[\s│├└─]+", line):
-            structure_buffer.append(line)
-            continue
-        else:
-            if structure_buffer:
-                blocks.append(DocBlock("code", "\n".join(structure_buffer)))
-                structure_buffer = []
-
-        # ---------- HEADINGS ----------
-        if stripped.startswith("#"):
-            level = len(stripped.split(" ")[0])
-            text = stripped[level:].strip()
-            text = convert_inline_markdown(text)
-
-            if level == 1 and title is None:
-                title = text
-
-            blocks.append(DocBlock(f"h{level}", text))
-            continue
-
         # ---------- BULLETS ----------
-        if stripped.startswith("- "):
+        if stripped.lstrip().startswith(("- ", "* ", "+ ")):
+            marker = stripped.lstrip().split(" ")[0]  # Get the marker
+            content_start = stripped.find(marker) + len(marker) + 1
             blocks.append(
-                DocBlock("bullet", convert_inline_markdown(stripped[2:]))
+                DocBlock("bullet", convert_inline_markdown(stripped[content_start:]))
             )
             continue
+
+        # ---------- PROJECT TREE / STRUCTURE ----------
+        if re.match(r"^[\s│├└─]+", line) and not stripped.strip().startswith(("#", ">")):
+            # Only treat as structure if it contains tree characters OR looks like a tree
+            # And isn't a bullet (already handled) or heading/quote
+            # But the regex matches leading spaces. We need to be careful.
+            # If it's just spaces, it might be a paragraph indent.
+            # Only treat as structure if it has tree chars.
+            if any(char in line for char in "│├└─"):
+                structure_buffer.append(line)
+                continue
+            # If it's just spaces and passed bullet check, it's likely a paragraph
+            pass
 
         # ---------- BLOCKQUOTE ----------
         if stripped.startswith(">"):

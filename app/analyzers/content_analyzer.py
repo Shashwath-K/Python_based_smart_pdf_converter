@@ -17,8 +17,11 @@ def has_heading(content: str) -> bool:
     return False
 
 
-def normalize_content(content: str, file_path: str) -> str:
+def normalize_content(content: str, file_path: str, include_filename_heading: bool = True) -> str:
     if has_heading(content):
+        return content
+
+    if not include_filename_heading:
         return content
 
     # Extract clean filename only
