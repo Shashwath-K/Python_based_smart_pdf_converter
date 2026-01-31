@@ -11,7 +11,7 @@ PDF_TEMPLATES = {
         "body_style": {
             "font": "Times-Roman",
             "size": 11,
-            "leading": 16,
+            "leading": 13,
             "alignment": "JUSTIFY",
             "space_after": 12
         },
@@ -32,7 +32,7 @@ PDF_TEMPLATES = {
         "body_style": {
             "font": "Helvetica",
             "size": 12,
-            "leading": 18,
+            "leading": 14,
             "alignment": "JUSTIFY",
             "space_after": 14
         },
@@ -53,7 +53,7 @@ PDF_TEMPLATES = {
         "body_style": {
             "font": "Courier",
             "size": 10,
-            "leading": 14,
+            "leading": 12,
             "alignment": "LEFT",
             "space_after": 10
         },
