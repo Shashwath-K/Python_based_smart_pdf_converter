@@ -9,8 +9,9 @@ def generate_docx(document: StructuredDocument, template: PDFTemplate, output_pa
     doc = Document()
     
     # Title
-    title = doc.add_heading(document.title, 0)
-    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    if document.title:
+        title = doc.add_heading(document.title, 0)
+        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     
     # Simple Style mapping
     font_name = 'Arial'
