@@ -8,6 +8,7 @@ class SupportedFileType(Enum):
     DOCX = "docx"
     CSV = "csv"
     HTML = "html"
+    IPYNB = "ipynb"
 
     @classmethod
     def list_values(cls):
