@@ -16,6 +16,7 @@ from app.parsers.html_parser import parse_html
 from app.analyzers.content_analyzer import normalize_content
 from app.analyzers.markdown_analyzer import analyze_markdown
 from app.analyzers.plaintext_analyzer import analyze_plaintext
+from app.analyzers.structure_scanner import scan_structure, bulletize_text
 
 from app.pdf.md_complete_conversion import convert_md_complete
 from app.pdf.pdf_generator import generate_pdf
@@ -27,7 +28,7 @@ from app.enums.file_types import SupportedFileType
 from app.exceptions.custom_exceptions import FileValidationError, ParsingError
 
 
-def convert_file(file, template_choice, use_filename_as_heading, output_format="PDF"):
+def convert_file(file, template_choice, use_filename_as_heading, output_format="PDF", auto_structure=False, bulletize=False):
     try:
         file_type = validate_file(file)
 
@@ -53,17 +54,32 @@ def convert_file(file, template_choice, use_filename_as_heading, output_format="
         # --- OTHER FORMATS ---
         if file_type == SupportedFileType.TXT:
             content = parse_txt(file)
+            # Pre-normalization (heading added if requested)
+            content = normalize_content(content, file.name, use_filename_as_heading)
+            
+            if bulletize:
+                 document = bulletize_text(content, file.name)
+            elif auto_structure:
+                 document = scan_structure(content, file.name)
+            else:
+                 document = analyze_plaintext(content, file.name)
+                 
         elif file_type == SupportedFileType.DOCX:
             content = parse_docx(file)
+            content = normalize_content(content, file.name, use_filename_as_heading)
+            document = analyze_plaintext(content, file.name)
         elif file_type == SupportedFileType.CSV:
             content = parse_csv(file)
+            content = normalize_content(content, file.name, use_filename_as_heading)
+            document = analyze_plaintext(content, file.name)
         elif file_type == SupportedFileType.HTML:
             content = parse_html(file)
+            content = normalize_content(content, file.name, use_filename_as_heading)
+            document = analyze_plaintext(content, file.name)
         else:
             content = parse_bin(file)
-
-        content = normalize_content(content, file.name, use_filename_as_heading)
-        document = analyze_plaintext(content, file.name)
+            content = normalize_content(content, file.name, use_filename_as_heading)
+            document = analyze_plaintext(content, file.name)
         
         if output_format == "DOCX":
              with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
@@ -97,7 +113,9 @@ def launch_app():
                 choices=["PDF", "DOCX"],
                 label="Output Format",
                 value="PDF"
-            )
+            ),
+            gr.Checkbox(label="Auto-Structure (TXT only)", value=False),
+            gr.Checkbox(label="Bulletize All Paragraphs (TXT only)", value=False)
         ],
         outputs=gr.File(label="Download Document"),
         title="Semantic File to PDF Converter",
