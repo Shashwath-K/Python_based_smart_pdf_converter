@@ -4,8 +4,9 @@ from markdown_it import MarkdownIt
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, 
-    ListFlowable, ListItem, Image, Preformatted, KeepTogether
+    ListFlowable, ListItem, Image, Preformatted, KeepTogether, XPreformatted
 )
+from app.utils.syntax_highlighter import highlight_code
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
@@ -134,7 +135,24 @@ class MDCompleteConverter:
                 
             elif type_ == 'fence' or type_ == 'code_block':
                 content = token.content
-                self.story.append(Preformatted(content, self.styles['MD_Code']))
+                info = token.info.strip() if hasattr(token, 'info') else ""
+                
+                # Apply Syntax Highlighting
+                try:
+                    highlighted_content = highlight_code(content, info if info else "text")
+                except:
+                    highlighted_content = content.replace("<", "&lt;").replace(">", "&gt;")
+
+                # Issue: XPreformatted does NOT wrap long lines.
+                # Issue: Table wrapper CRASHES on multi-page blocks.
+                # Solution: Use Paragraph with backColor style. It splits correctly.
+                formatted_code = highlighted_content.replace("\n", "<br/>")
+                
+                # Add spacing before code block as requested ("two 1.5 \n space")
+                self.story.append(Spacer(1, 30))
+                
+                # Create a Paragraph with the code style (which now has backColor/border)
+                self.story.append(Paragraph(formatted_code, self.styles['MD_Code']))
                 i += 1
                 continue
             
