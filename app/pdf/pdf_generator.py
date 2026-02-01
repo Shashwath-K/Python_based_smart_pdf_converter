@@ -58,15 +58,15 @@ def generate_pdf(
     # -------------------------------------------------
     # Title
     # -------------------------------------------------
-    title_style = ParagraphStyle(
-        name="Title",
-        fontName=cfg["title_style"]["font"],
-        fontSize=cfg["title_style"]["size"],
-        alignment=TA_CENTER,
-        spaceAfter=cfg["title_style"]["space_after"]
-    )
-
-    story.append(Paragraph(document.title, title_style))
+    if document.title:
+        title_style = ParagraphStyle(
+            name="Title",
+            fontName=cfg["title_style"]["font"],
+            fontSize=cfg["title_style"]["size"],
+            alignment=TA_CENTER,
+            spaceAfter=cfg["title_style"]["space_after"]
+        )
+        story.append(Paragraph(document.title, title_style))
 
     # -------------------------------------------------
     # Base Body Style
