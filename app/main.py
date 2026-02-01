@@ -126,36 +126,89 @@ def update_txt_visibility(file):
 
 
 def launch_app():
-    with gr.Blocks(title="Semantic File to PDF Converter") as app:
-        gr.Markdown("# Semantic File to PDF Converter")
-        gr.Markdown("Markdown-aware conversion with headings, lists, code blocks, and professional layout.")
-        
+    # Use a soft, modern theme
+    theme = gr.themes.Soft(
+        primary_hue="blue",
+        neutral_hue="slate",
+    )
+
+    with gr.Blocks(theme=theme, title="Semantic File to PDF Converter") as app:
+        # --- Header ---
         with gr.Row():
-            file_input = gr.File(label="Upload File", file_count="single")
+            gr.Markdown(
+                """
+                # 📄 Semantic File to PDF Converter
+                **Professional, Markdown-aware document conversion for modern workflows.**  
+                *Supports: Markdown (`.md`), Jupyter Notebooks (`.ipynb`), Word (`.docx`), Text (`.txt`), HTML, CSV*
+                """
+            )
+
+        # --- Main Content ---
+        with gr.Row():
+            # Left Column: Inputs
+            with gr.Column(scale=1):
+                file_input = gr.File(label="📂 Upload File", file_count="single", height=300)
             
-        with gr.Row():
-            with gr.Column():
-                template_dropdown = gr.Dropdown(
-                    choices=[t.value for t in PDFTemplate],
-                    label="Choose PDF Template",
-                    value=PDFTemplate.CLASSIC.value
-                )
-                output_format = gr.Radio(
-                    choices=["PDF", "DOCX"],
-                    label="Output Format",
-                    value="PDF"
-                )
-            with gr.Column():
-                use_heading = gr.Checkbox(label="Use Filename as Heading", value=True)
+            # Right Column: Configuration
+            with gr.Column(scale=1):
+                gr.Markdown("### ⚙️ Conversion Settings")
                 
-                # Dynamic Options (Hidden by default)
-                auto_structure = gr.Checkbox(label="Auto-Structure (TXT only)", value=False, visible=False)
-                bulletize = gr.Checkbox(label="Bulletize All Paragraphs (TXT only)", value=False, visible=False)
+                with gr.Group():
+                    template_dropdown = gr.Dropdown(
+                        choices=[t.value for t in PDFTemplate],
+                        label="🎨 PDF Template",
+                        value=PDFTemplate.CLASSIC.value,
+                        interactive=True
+                    )
+                    output_format = gr.Radio(
+                        choices=["PDF", "DOCX"],
+                        label="💾 Output Format",
+                        value="PDF",
+                        interactive=True
+                    )
 
-        convert_btn = gr.Button("Convert Document", variant="primary")
-        output_file = gr.File(label="Download Document")
+                # Advanced Settings Accordion
+                with gr.Accordion("🛠️ Advanced Options", open=False):
+                    use_heading = gr.Checkbox(
+                        label="Use Filename as Title",
+                        value=True,
+                        info="Adds a formatted title to the document based on the filename."
+                    )
+                    
+                    # Dynamic Options (Hidden by default)
+                    auto_structure = gr.Checkbox(
+                        label="Auto-Structure (TXT only)", 
+                        value=False, 
+                        visible=False,
+                        info="Detects headings (UPPERCASE) and lists in plain text files."
+                    )
+                    bulletize = gr.Checkbox(
+                        label="Bulletize All Paragraphs (TXT only)", 
+                        value=False, 
+                        visible=False,
+                        info="Converts every paragraph into a bullet point."
+                    )
 
-        # Event Listeners
+                # Action Button
+                convert_btn = gr.Button("🚀 Convert Document", variant="primary", size="lg")
+
+        # --- Output Section ---
+        with gr.Row():
+            output_file = gr.File(label="✅ Download Result", interactive=False)
+
+        # --- Footer ---
+        with gr.Row():
+            gr.Markdown(
+                """
+                ---
+                <div style="text-align: center; color: gray; font-size: 0.9em;">
+                    Built with 💙 using <b>Gradio</b>, <b>ReportLab</b>, and <b>Python</b>. | 
+                    <a href="https://github.com/Shashwath-K/Python_based_smart_pdf_converter" target="_blank" style="text-decoration: none; color: #4F46E5;">GitHub Repository</a>
+                </div>
+                """
+            )
+
+        # --- Event Listeners ---
         file_input.change(
             fn=update_txt_visibility,
             inputs=file_input,
