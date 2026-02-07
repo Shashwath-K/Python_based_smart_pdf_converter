@@ -11,10 +11,6 @@ from app.parsers.csv_parser import parse_csv
 from app.parsers.html_parser import parse_html
 from app.parsers.ipynb_parser import parse_ipynb
 
-from app.parsers.bin_parser import parse_bin
-from app.parsers.csv_parser import parse_csv
-from app.parsers.html_parser import parse_html
-
 from app.analyzers.content_analyzer import normalize_content
 from app.analyzers.markdown_analyzer import analyze_markdown
 from app.analyzers.plaintext_analyzer import analyze_plaintext
@@ -28,7 +24,6 @@ from app.docx.md_docx_converter import convert_md_to_docx
 from app.enums.templates import PDFTemplate
 from app.enums.file_types import SupportedFileType
 from app.exceptions.custom_exceptions import FileValidationError, ParsingError
-
 
 def convert_file(file, template_choice, use_filename_as_heading, output_format="PDF", auto_structure=False, bulletize=False):
     try:
@@ -63,8 +58,6 @@ def convert_file(file, template_choice, use_filename_as_heading, output_format="
         # --- OTHER FORMATS ---
         if file_type == SupportedFileType.TXT:
             content = parse_txt(file)
-            # normalize_content removed to prevent double-heading (Title + Body Text)
-            # The Title is handled via document.title in the Analyzer.
             
             if bulletize:
                  document = bulletize_text(content, file.name)
@@ -110,11 +103,7 @@ def convert_file(file, template_choice, use_filename_as_heading, output_format="
     except (FileValidationError, ParsingError) as e:
         raise gr.Error(str(e))
 
-
 def update_txt_visibility(file):
-    """
-    Callback to update visibility of TXT-specific options.
-    """
     if file is None:
         return gr.update(visible=False), gr.update(visible=False)
     
@@ -124,88 +113,99 @@ def update_txt_visibility(file):
     
     return gr.update(visible=False), gr.update(visible=False)
 
-
 def launch_app():
-    # Use a soft, modern theme
+    # Modernizing with custom CSS for centering and card-layouts
+    custom_css = """
+        .container { max-width: 1000px; margin: auto; padding-top: 2rem; }
+        .header-text { text-align: center; margin-bottom: 2rem; }
+        .footer-text { text-align: center; margin-top: 3rem; padding: 2rem; opacity: 0.7; }
+        .gr-button-primary { background: #2563eb !important; }
+    """
+
     theme = gr.themes.Soft(
         primary_hue="blue",
         neutral_hue="slate",
+        spacing_size="md",
+        radius_size="lg",
     )
 
-    with gr.Blocks(theme=theme, title="Semantic File to PDF Converter") as app:
-        # --- Header ---
-        with gr.Row():
+    with gr.Blocks(theme=theme, css=custom_css, title="Semantic File Converter") as app:
+        with gr.Column(elem_classes="container"):
+            # --- Header ---
             gr.Markdown(
                 """
-                # 📄 Semantic File to PDF Converter
-                **Professional, Markdown-aware document conversion for modern workflows.**  
-                *Supports: Markdown (`.md`), Jupyter Notebooks (`.ipynb`), Word (`.docx`), Text (`.txt`), HTML, CSV*
+                <div class="header-text">
+                    <h1>Semantic File Converter</h1>
+                    <p>Professional document conversion with structural intelligence.</p>
+                    <small>Supports Markdown, Jupyter, Word, Text, HTML, and CSV</small>
+                </div>
                 """
             )
 
-        # --- Main Content ---
-        with gr.Row():
-            # Left Column: Inputs
-            with gr.Column(scale=1):
-                file_input = gr.File(label="📂 Upload File", file_count="single", height=300)
-            
-            # Right Column: Configuration
-            with gr.Column(scale=1):
-                gr.Markdown("### ⚙️ Conversion Settings")
+            # --- Main Interface ---
+            with gr.Row(variant="panel"):
+                # Left: Upload
+                with gr.Column(scale=1, min_width=320):
+                    file_input = gr.File(
+                        label="Upload Document", 
+                        file_count="single", 
+                        height=250
+                    )
                 
-                with gr.Group():
-                    template_dropdown = gr.Dropdown(
-                        choices=[t.value for t in PDFTemplate],
-                        label="🎨 PDF Template",
-                        value=PDFTemplate.CLASSIC.value,
-                        interactive=True
-                    )
-                    output_format = gr.Radio(
-                        choices=["PDF", "DOCX"],
-                        label="💾 Output Format",
-                        value="PDF",
-                        interactive=True
-                    )
-
-                # Advanced Settings Accordion
-                with gr.Accordion("🛠️ Advanced Options", open=False):
-                    use_heading = gr.Checkbox(
-                        label="Use Filename as Title",
-                        value=True,
-                        info="Adds a formatted title to the document based on the filename."
-                    )
+                # Right: Configuration
+                with gr.Column(scale=1, min_width=320):
+                    gr.Markdown("### Configuration")
                     
-                    # Dynamic Options (Hidden by default)
-                    auto_structure = gr.Checkbox(
-                        label="Auto-Structure (TXT only)", 
-                        value=False, 
-                        visible=False,
-                        info="Detects headings (UPPERCASE) and lists in plain text files."
-                    )
-                    bulletize = gr.Checkbox(
-                        label="Bulletize All Paragraphs (TXT only)", 
-                        value=False, 
-                        visible=False,
-                        info="Converts every paragraph into a bullet point."
-                    )
+                    with gr.Group():
+                        template_dropdown = gr.Dropdown(
+                            choices=[t.value for t in PDFTemplate],
+                            label="Document Template",
+                            value=PDFTemplate.CLASSIC.value,
+                            interactive=True
+                        )
+                        output_format = gr.Radio(
+                            choices=["PDF", "DOCX"],
+                            label="Output Format",
+                            value="PDF",
+                            interactive=True
+                        )
 
-                # Action Button
-                convert_btn = gr.Button("🚀 Convert Document", variant="primary", size="lg")
+                    with gr.Accordion("Advanced Settings", open=False):
+                        use_heading = gr.Checkbox(
+                            label="Use Filename as Document Title",
+                            value=True,
+                            info="Automatically generates a header from the source filename."
+                        )
+                        
+                        auto_structure = gr.Checkbox(
+                            label="Automatic Structure Detection", 
+                            value=False, 
+                            visible=False,
+                            info="Applies to TXT files: Detects headings and lists."
+                        )
+                        bulletize = gr.Checkbox(
+                            label="Convert Paragraphs to Bullets", 
+                            value=False, 
+                            visible=False,
+                            info="Applies to TXT files: Formats all text as a list."
+                        )
 
-        # --- Output Section ---
-        with gr.Row():
-            output_file = gr.File(label="✅ Download Result", interactive=False)
+            # --- Action & Output ---
+            with gr.Row():
+                with gr.Column():
+                    convert_btn = gr.Button("Process and Convert", variant="primary", size="lg")
+                    output_file = gr.File(label="Download Processed Document", interactive=False)
 
-        # --- Footer ---
-        with gr.Row():
+            # --- Footer ---
             gr.Markdown(
                 """
-                ---
-                <div style="text-align: center; color: gray; font-size: 0.9em;">
-                    Built with 💙 using <b>Gradio</b>, <b>ReportLab</b>, and <b>Python</b>. | 
-                    <a href="https://github.com/Shashwath-K/Python_based_smart_pdf_converter" target="_blank" style="text-decoration: none; color: #4F46E5;">GitHub Repository</a>
+                <div class="footer-text">
+                    <hr>
+                    <p>Powered by Gradio, ReportLab, and Python</p>
+                    <p><a href="https://github.com/Shashwath-K/Python_based_smart_pdf_converter" target="_blank">View Source on GitHub</a></p>
                 </div>
-                """
+                """,
+                elem_classes="footer-text"
             )
 
         # --- Event Listeners ---
@@ -229,8 +229,6 @@ def launch_app():
         )
 
     app.launch()
-
-
 
 if __name__ == "__main__":
     launch_app()
